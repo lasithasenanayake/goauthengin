@@ -2,6 +2,7 @@ package term
 
 import (
 	"fmt"
+	"time"
 )
 
 const (
@@ -31,26 +32,28 @@ const (
 	BgCyan    = "\x1b[46m"
 	BgWhite   = "\x1b[47m"
 
-	ErrorBlink = 1
+	Error       = 1
+	Information = 0
+	Debug       = 2
 )
 
-func Read(fgCode, bgCode, Lable string) string {
+func Read(Lable string) string {
 	var S string
-	fmt.Printf(fgCode + bgCode + Lable + " LDS$" + Reset)
+	fmt.Printf(FgGreen + Lable + FgMagenta + " LDS$ " + Reset)
 	fmt.Scan(&S)
 	return S
 }
 
-func Write(fgCode, bgCode, Lable string, mType int) {
+func Write(Lable string, mType int) {
 	//var S string
 	switch mType {
 	case 1:
-		fmt.Println(Blink + fgCode + bgCode + Lable + Reset)
+		fmt.Println(FgRed + time.Now().String() + "Error! " + Lable + Reset)
+	case 0:
+		fmt.Println(FgGreen + time.Now().String() + "Information! " + Lable + Reset)
+	case 2:
+		fmt.Println(FgBlue + time.Now().String() + "Debug! " + Lable + Reset)
 	default:
-		fmt.Println(fgCode + bgCode + Lable + Reset)
+		fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
 	}
-}
-
-func Writec(Lable string) {
-	fmt.Println(FgBlue + BgBlack + Lable + Reset)
 }
