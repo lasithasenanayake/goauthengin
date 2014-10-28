@@ -2,11 +2,13 @@ package main
 
 import (
 	"code.google.com/p/gorest"
+	//"crypto/tls"
 	"duov6.com/authlib"
 	"duov6.com/term"
 	"encoding/json"
 	"io"
 	"net/http"
+	//"strings"
 )
 
 func invoke(res http.ResponseWriter, req *http.Request) {
@@ -24,6 +26,7 @@ func invoke(res http.ResponseWriter, req *http.Request) {
         Hello World!
     </body>
 </html>`
+
 	term.Write("RequestURI "+req.RequestURI, term.Debug)
 	term.Write("Header SecurityToken "+req.Header.Get("SecurityToken"), term.Error)
 	term.Write("RemoteAddr "+req.RemoteAddr, term.Debug)
@@ -32,6 +35,7 @@ func invoke(res http.ResponseWriter, req *http.Request) {
 	term.Write("req.Method "+req.Method, term.Debug)
 	//key)
 	//
+
 	a := authlib.Auth{}
 	switch req.FormValue("method") {
 	case "login":
@@ -61,9 +65,14 @@ func invoke(res http.ResponseWriter, req *http.Request) {
 
 func main() {
 	gorest.RegisterService(new(authlib.Auth))
-	http.Handle("/", gorest.Handle())
+	//http.Handle("/", gorest.Handle9())
 	//http.HandleFunc("/json", invoke)
-	go http.ListenAndServe(":9000", nil)
+	//http.ListenAndServe(":9000", nil)
+	err := http.ListenAndServeTLS(":3048", "apache.crt", "apache.key", gorest.Handle())
+	if err != nil {
+		term.Write(err.Error(), term.Error)
+		return
+	}
 	term.Write(term.Read("What is your name"), term.Information)
 	term.Read("Stop")
 
