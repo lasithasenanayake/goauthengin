@@ -66,14 +66,33 @@ func invoke(res http.ResponseWriter, req *http.Request) {
 func main() {
 	gorest.RegisterService(new(authlib.Auth))
 	//http.Handle("/", gorest.Handle9())
-	//http.HandleFunc("/json", invoke)
-	//http.ListenAndServe(":9000", nil)
+	http.HandleFunc("/json", invoke)
+	go http.ListenAndServe(":9000", nil)
+	go runRestFul()
+	term.Write(term.Read("What is your name"), term.Information)
+	term.StartCommandLine()
+	s := term.Read("Command$")
+	for s != "exit" {
+		switch s {
+		case "status":
+			status()
+		default:
+			term.Write(s+" Command Dose not exist", term.Error)
+		}
+		s = term.Read("Command Console")
+	}
+
+}
+
+func status() {
+	term.Write("Status is running", term.Information)
+}
+
+func runRestFul() {
 	err := http.ListenAndServeTLS(":3048", "apache.crt", "apache.key", gorest.Handle())
 	if err != nil {
 		term.Write(err.Error(), term.Error)
 		return
 	}
-	term.Write(term.Read("What is your name"), term.Information)
-	term.Read("Stop")
 
 }
