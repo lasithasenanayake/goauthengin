@@ -2,6 +2,7 @@ package term
 
 import (
 	"fmt"
+	"os/exec"
 	"time"
 )
 
@@ -40,7 +41,7 @@ const (
 func Read(Lable string) string {
 	var S string
 	fmt.Printf(FgGreen + Lable + FgMagenta + " LDS$ " + Reset)
-	fmt.Scan(&S)
+	fmt.Scanln(&S)
 	return S
 }
 
@@ -55,5 +56,15 @@ func Write(Lable string, mType int) {
 		fmt.Println(FgBlue + time.Now().String() + "Debug! " + Lable + Reset)
 	default:
 		fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
+	}
+}
+
+func StartCommandLine() {
+	s := Read("Command$")
+	for s != "exit" {
+		cmd := exec.Command(s, "")
+		cmd.Start()
+		//Write(string(o), Information)
+		s = Read("Command Console")
 	}
 }
