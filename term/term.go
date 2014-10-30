@@ -1,6 +1,7 @@
 package term
 
 import (
+	"duov6.com/updater"
 	"fmt"
 	"os/exec"
 	"time"
@@ -60,11 +61,17 @@ func Write(Lable string, mType int) {
 }
 
 func StartCommandLine() {
-	s := Read("Command$")
+	s := Read("Command ")
 	for s != "exit" {
 		cmd := exec.Command(s, "")
 		cmd.Start()
-		//Write(string(o), Information)
-		s = Read("Command Console")
+		switch s {
+		case "download":
+			//Write("Invalid command.", Error)
+			updater.DownloadFromUrl(Read("URL"), Read("FileName"))
+		default:
+			Write("Invalid command.", Error)
+		}
+		s = Read("Command ")
 	}
 }
