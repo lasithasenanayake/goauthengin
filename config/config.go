@@ -1,9 +1,18 @@
 package config
 
-func Add(Key, Value string) {
+import (
+	"os"
+)
 
+type config struct {
+	m make(map[])
 }
 
-func Get(Key string) string {
-	return "sss"
+func (c *config)Add(Key, Value string) {
+	c.m[key]=Value
+	writetoFile()
+}
+
+func (c *config)Get(Key string) string {
+	return c.m[key]
 }
