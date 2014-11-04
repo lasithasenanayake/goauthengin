@@ -64,23 +64,15 @@ func invoke(res http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	gorest.RegisterService(new(authlib.Auth))
+
 	//http.Handle("/", gorest.Handle9())
-	http.HandleFunc("/json", invoke)
-	go http.ListenAndServe(":9000", nil)
+	go webServer()
 	go runRestFul()
-	term.Write(term.Read("What is your name"), term.Information)
+	//term.Write(term.Read("What is your name"), term.Information)
+	term.Write("Admintration Console running on :9000", term.Information)
+	term.Write("https RestFul Service running on :3048", term.Information)
+
 	term.StartCommandLine()
-	s := term.Read("Command$")
-	for s != "exit" {
-		switch s {
-		case "status":
-			status()
-		default:
-			term.Write(s+" Command Dose not exist", term.Error)
-		}
-		s = term.Read("Command Console")
-	}
 
 }
 
@@ -88,11 +80,23 @@ func status() {
 	term.Write("Status is running", term.Information)
 }
 
+func webServer() {
+
+	http.Handle(
+		"/",
+		http.StripPrefix(
+			"/",
+			http.FileServer(http.Dir("html")),
+		),
+	)
+	http.ListenAndServe(":9000", nil)
+}
+
 func runRestFul() {
+	gorest.RegisterService(new(authlib.Auth))
 	err := http.ListenAndServeTLS(":3048", "apache.crt", "apache.key", gorest.Handle())
 	if err != nil {
 		term.Write(err.Error(), term.Error)
 		return
 	}
-
 }
