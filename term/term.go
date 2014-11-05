@@ -43,6 +43,8 @@ func Read(Lable string) string {
 	var S string
 	fmt.Printf(FgGreen + Lable + FgMagenta + " LDS$ " + Reset)
 	fmt.Scanln(&S)
+	//fmt.
+	//BgGreen
 	return S
 }
 

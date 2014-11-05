@@ -6,6 +6,7 @@ import (
 	"duov6.com/authlib"
 	"duov6.com/term"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	//"strings"
@@ -71,7 +72,11 @@ func main() {
 	//term.Write(term.Read("What is your name"), term.Information)
 	term.Write("Admintration Console running on :9000", term.Information)
 	term.Write("https RestFul Service running on :3048", term.Information)
-
+	s := ""
+	num, err := fmt.Scanln(&s)
+	fmt.Println(s)
+	fmt.Println(num)
+	fmt.Println(err)
 	term.StartCommandLine()
 
 }
@@ -81,7 +86,6 @@ func status() {
 }
 
 func webServer() {
-
 	http.Handle(
 		"/",
 		http.StripPrefix(

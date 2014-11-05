@@ -105,3 +105,7 @@ func (c *File) writetoFile() {
 		}
 	}
 }
+
+func func_name() {
+
+}
