@@ -1,6 +1,6 @@
 package messaging
 
 type Query struct {
-	What       string //QUERYING, SEARCHING, KEY, ALL
+	Type       string //QUERYING, SEARCHING, KEY, ALL
 	Parameters string
 }

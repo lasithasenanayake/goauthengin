@@ -5,7 +5,8 @@ import (
 )
 
 type ObjectRequest struct {
-	Header             RequestHeader
-	Body               RequestBody
-	StoreConfiguration configuration.StoreConfiguration
+	Controls      RequestControls
+	Body          RequestBody
+	Configuration configuration.StoreConfiguration
+	Extras        map[string]interface{}
 }

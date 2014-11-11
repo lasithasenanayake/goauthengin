@@ -17,30 +17,48 @@ type HTTPService struct {
 func (h *HTTPService) Start() {
 	fmt.Println("Object Store Listening on Port : 8090")
 	m := martini.Classic()
-	m.Post("/:namespace/:class", func(params martini.Params, res http.ResponseWriter, req *http.Request) { // res and req are injected by Martini
 
-		responseMessage, isSuccess := dispatchRequest(req, params["namespace"], params["class"])
+	//READ BY KEY
+	m.Get("/:namespace/:class/:id", handleRequest)
+	//READ BY KEYWORD
+	m.Get("/:namespace/:class?keyword=:keyword", handleRequest)
+	//READ ADVANCED, INSERT
+	m.Post("/:namespace/:class", handleRequest)
 
-		if isSuccess {
-			res.WriteHeader(200)
-			fmt.Println("Success")
-		} else {
-			res.WriteHeader(500)
-			fmt.Println("Failed!!!")
-		}
+	//UPDATE
+	m.Put("/:namespace/:class", handleRequest)
+	//DELETE
+	m.Delete("/:namespace/:class", handleRequest)
 
-		fmt.Fprintf(res, "%s", responseMessage)
-	})
 	m.Run()
+}
+
+func handleRequest(params martini.Params, res http.ResponseWriter, req *http.Request) { // res and req are injected by Martini
+
+	responseMessage, isSuccess := dispatchRequest(req, params)
+
+	if isSuccess {
+		res.WriteHeader(200)
+		fmt.Println("Success")
+	} else {
+		res.WriteHeader(500)
+		fmt.Println("Failed!!!")
+	}
+
+	fmt.Fprintf(res, "%s", responseMessage)
 }
 
 func (h *HTTPService) Stop() {
 }
 
-func dispatchRequest(r *http.Request, namespace string, class string) (responseMessage string, isSuccess bool) { //result is JSON
+func dispatchRequest(r *http.Request, params martini.Params) (responseMessage string, isSuccess bool) { //result is JSON
 
 	objectRequest := messaging.ObjectRequest{}
-	message, isSuccess := getObjectRequest(r, &objectRequest, namespace, class)
+
+	paramMap := make(map[string]interface{})
+	objectRequest.Extras = paramMap
+
+	message, isSuccess := getObjectRequest(r, &objectRequest, params)
 
 	if isSuccess == false {
 		responseMessage = getQueryResponseString("Invalid Query Request", message, false)
@@ -80,55 +98,90 @@ func getQueryResponseString(mainError string, reason string, isSuccess bool) str
 	}
 }
 
-func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, headerNamespace string, headerClass string) (message string, isSuccess bool) {
+func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, params martini.Params) (message string, isSuccess bool) {
 
 	missingFields := ""
 	isSuccess = true
 
 	headerToken := r.Header.Get("securityToken")
-	headerOperation := r.Header.Get("operation")
+
+	var headerOperation string
 	headerMultipliciry := r.Header.Get("multiplicity")
 
-	headerId := r.Header.Get("id")
-	headerVersion := r.Header.Get("version")
+	headerNamespace := params["namespace"]
+	headerClass := params["class"]
+
+	headerId := params["id"]
+	headerKeyword := params["keyword"]
 
 	if len(headerToken) == 0 {
 		isSuccess = false
-		missingFields = missingFields + "securityToken, "
+		missingFields = missingFields + "securityToken"
 	}
 
-	if len(headerOperation) == 0 {
-		isSuccess = false
-		missingFields = missingFields + "operation, "
-	}
-
-	if len(headerMultipliciry) == 0 {
-		isSuccess = false
-		missingFields = missingFields + "multiplicity, "
-	}
+	var requestBody messaging.RequestBody
 
 	if isSuccess {
-		objectRequest.Header = messaging.RequestHeader{SecurityToken: headerToken, Namespace: headerNamespace, Class: headerClass, Operation: headerOperation, Multiplicity: headerMultipliciry, Id: headerId, Version: headerVersion}
 
-		var requestBody messaging.RequestBody
+		if r.Method != "GET" {
+			rb, rerr := ioutil.ReadAll(r.Body)
 
-		rb, rerr := ioutil.ReadAll(r.Body)
-
-		if rerr != nil {
-			message = "Error converting request : " + rerr.Error()
-			isSuccess = false
-		} else {
-
-			err := json.Unmarshal(rb, &requestBody)
-
-			if err != nil {
-				message = "JSON Parse error in Request : " + err.Error()
+			if rerr != nil {
+				message = "Error converting request : " + rerr.Error()
 				isSuccess = false
 			} else {
-				objectRequest.Body = requestBody
+				err := json.Unmarshal(rb, &requestBody)
 
-				configObject := configuration.ConfigurationManager{}.Get(headerToken, headerNamespace, headerClass)
-				objectRequest.StoreConfiguration = configObject
+				if err != nil {
+					message = "JSON Parse error in Request : " + err.Error()
+					isSuccess = false
+				} else {
+					objectRequest.Body = requestBody
+				}
+			}
+		}
+
+		if isSuccess {
+
+			canAddHeader := true
+			switch r.Method {
+			case "GET": //read keyword, and unique key
+				if len(headerId) != 0 {
+					headerOperation = "read-key"
+				} else if len(headerKeyword) != 0 {
+					headerOperation = "read-keyword"
+				} else if len(headerNamespace) != 0 && len(headerClass) != 0 {
+					headerOperation = "read-all"
+				}
+				canAddHeader = false
+			case "POST": //read query, read special, insert
+				if requestBody.Body != nil {
+					fmt.Println("Inset by POST : " + objectRequest.Body.Parameters.KeyProperty)
+					headerOperation = "insert"
+					headerId = objectRequest.Body.Body[objectRequest.Body.Parameters.KeyProperty].(string)
+				} else if &requestBody.Query != nil {
+					headerOperation = "read-filter"
+					canAddHeader = false
+				}
+
+			case "PUT": //update
+				headerId = objectRequest.Body.Body[objectRequest.Body.Parameters.KeyProperty].(string)
+				headerOperation = "update"
+
+			case "DELETE": //delete
+				headerId = objectRequest.Body.Body[objectRequest.Body.Parameters.KeyProperty].(string)
+				headerOperation = "delete"
+			}
+
+			headerMultipliciry = "single"
+
+			objectRequest.Controls = messaging.RequestControls{SecurityToken: headerToken, Namespace: headerNamespace, Class: headerClass, Multiplicity: headerMultipliciry, Id: headerId, Operation: headerOperation}
+
+			configObject := configuration.ConfigurationManager{}.Get(headerToken, headerNamespace, headerClass)
+			objectRequest.Configuration = configObject
+
+			if canAddHeader {
+				repositories.FillControlHeaders(objectRequest)
 			}
 		}
 

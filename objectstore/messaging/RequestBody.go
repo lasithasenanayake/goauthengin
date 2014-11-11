@@ -1,6 +1,7 @@
 package messaging
 
 type RequestBody struct {
-	Query Query
-	Body  map[string]interface{}
+	Parameters ObjectParameters
+	Query      Query
+	Body       map[string]interface{}
 }

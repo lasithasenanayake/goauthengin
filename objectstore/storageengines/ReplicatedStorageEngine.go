@@ -16,48 +16,52 @@ func (r ReplicatedStorageEngine) Store(request *messaging.ObjectRequest) (respon
 	var failAction int = 0
 	var engineMappings map[string]string
 
-	switch request.Header.Operation { //CREATE, READ, UPDATE, DELETE, SPECIAL
-	case "CREATE":
+	switch request.Controls.Operation { //CREATE, READ, UPDATE, DELETE, SPECIAL
+	case "insert":
 		successAction = 1
 		failAction = 2
-		if request.Header.Multiplicity == "SINGLE" {
-			engineMappings = request.StoreConfiguration.StoreConfiguration["INSERT-SINGLE"]
+		if request.Controls.Multiplicity == "single" {
+			engineMappings = request.Configuration.StoreConfiguration["INSERT-SINGLE"]
 		} else {
-			engineMappings = request.StoreConfiguration.StoreConfiguration["INSERT-MULTIPLE"]
+			engineMappings = request.Configuration.StoreConfiguration["INSERT-MULTIPLE"]
 		}
-	case "READ":
+	case "read-all":
 		successAction = 3
 		failAction = 1
-		switch request.Body.Query.What { //QUERYING, SEARCHING, KEY, ALL
-		case "QUERYING":
-			engineMappings = request.StoreConfiguration.StoreConfiguration["GET-QUERY"]
-		case "SEARCHING":
-			engineMappings = request.StoreConfiguration.StoreConfiguration["GET-SEARCH"]
-		case "KEY":
-			engineMappings = request.StoreConfiguration.StoreConfiguration["GET-KEY"]
-		case "ALL":
-			engineMappings = request.StoreConfiguration.StoreConfiguration["GET-ALL"]
-		}
-	case "UPDATE":
-		successAction = 1
-		failAction = 2
-		if request.Header.Multiplicity == "SINGLE" {
-			engineMappings = request.StoreConfiguration.StoreConfiguration["UPDATE-SINGLE"]
-		} else {
-			engineMappings = request.StoreConfiguration.StoreConfiguration["UPDATE-MULTIPLE"]
-		}
-	case "DELETE":
-		successAction = 1
-		failAction = 2
-		if request.Header.Multiplicity == "SINGLE" {
-			engineMappings = request.StoreConfiguration.StoreConfiguration["DELETE-SINGLE"]
-		} else {
-			engineMappings = request.StoreConfiguration.StoreConfiguration["DELETE-MULTIPLE"]
-		}
-	case "SPECIAL":
+		engineMappings = request.Configuration.StoreConfiguration["GET-ALL"]
+	case "read-key":
 		successAction = 3
 		failAction = 1
-		engineMappings = request.StoreConfiguration.StoreConfiguration["SPECIAL"]
+		engineMappings = request.Configuration.StoreConfiguration["GET-KEY"]
+	case "read-keyword":
+		successAction = 3
+		failAction = 1
+		engineMappings = request.Configuration.StoreConfiguration["GET-QUERY"]
+	case "read-filter":
+		successAction = 3
+		failAction = 1
+		engineMappings = request.Configuration.StoreConfiguration["GET-SEARCH"]
+
+	case "update":
+		successAction = 1
+		failAction = 2
+		if request.Controls.Multiplicity == "single" {
+			engineMappings = request.Configuration.StoreConfiguration["UPDATE-SINGLE"]
+		} else {
+			engineMappings = request.Configuration.StoreConfiguration["UPDATE-MULTIPLE"]
+		}
+	case "delete":
+		successAction = 1
+		failAction = 2
+		if request.Controls.Multiplicity == "single" {
+			engineMappings = request.Configuration.StoreConfiguration["DELETE-SINGLE"]
+		} else {
+			engineMappings = request.Configuration.StoreConfiguration["DELETE-MULTIPLE"]
+		}
+	case "special":
+		successAction = 3
+		failAction = 1
+		engineMappings = request.Configuration.StoreConfiguration["SPECIAL"]
 
 	}
 

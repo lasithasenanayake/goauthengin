@@ -13,7 +13,7 @@ func (d *Dispatcher) Dispatch(request *messaging.ObjectRequest) repositories.Rep
 
 	var storageEngine storageengines.AbstractStorageEngine // request.StoreConfiguration.StorageEngine
 
-	switch request.StoreConfiguration.StorageEngine {
+	switch request.Configuration.StorageEngine {
 	case "REPLICATED":
 		storageEngine = storageengines.ReplicatedStorageEngine{}
 	case "SINGLE":

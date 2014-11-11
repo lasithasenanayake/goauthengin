@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"time"
 	//"strings"
 )
 
@@ -64,8 +66,44 @@ func invoke(res http.ResponseWriter, req *http.Request) {
 
 }
 
-func main() {
+func testChannel() {
+	c1 := make(chan string)
+	c2 := make(chan string)
 
+	go func() {
+		i1 := 0
+		for {
+			c1 <- "from 1 " + strconv.Itoa(i1)
+			time.Sleep(time.Second * 1)
+			i1++
+		}
+
+	}()
+	go func() {
+		i2 := 0
+		for {
+			c2 <- "from 2 " + strconv.Itoa(i2)
+			time.Sleep(time.Second * 2)
+			i2++
+		}
+	}()
+	go func() {
+		for {
+			select {
+			case msg1 := <-c1:
+				fmt.Println(msg1)
+			case msg2 := <-c2:
+				fmt.Println(msg2)
+			}
+		}
+	}()
+
+	var input string
+	fmt.Scanln(&input)
+}
+
+func main() {
+	//testChannel()
 	//http.Handle("/", gorest.Handle9())
 	go webServer()
 	go runRestFul()
