@@ -3,6 +3,7 @@ package term
 import (
 	"duov6.com/updater"
 	"fmt"
+	"log"
 	"os/exec"
 	"time"
 )
@@ -52,6 +53,7 @@ func Write(Lable string, mType int) {
 	//var S string
 	switch mType {
 	case 1:
+		//log.Printf(format, ...)
 		fmt.Println(FgRed + time.Now().String() + "Error! " + Lable + Reset)
 	case 0:
 		fmt.Println(FgGreen + time.Now().String() + "Information! " + Lable + Reset)
