@@ -43,7 +43,6 @@ func (A Auth) Autherize(SecurityToken string, ApplicationID string) AuthCertific
 		if h.AppAutherize(ApplicationID, c.UserID) == true {
 			a = c
 			a.SecurityToken = common.GetGUID()
-			//a.Otherdata["ApplicationID"] = ApplicationID
 			h.AddSession(a)
 			return a
 		}
@@ -52,11 +51,11 @@ func (A Auth) Autherize(SecurityToken string, ApplicationID string) AuthCertific
 	return a
 }
 
-func (A Auth) GetAuthCode(SecurityToken, ApplicationID string) string {
+func (A Auth) GetAuthCode(SecurityToken, ApplicationID, URI string) string {
 	h := newAuthHandler()
 	c, err := h.GetSession(SecurityToken)
 	if err == "" {
-		return h.GetAuthCode(ApplicationID, c.UserID)
+		return h.GetAuthCode(ApplicationID, c.UserID, URI)
 	}
 	return ""
 }

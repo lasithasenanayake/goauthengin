@@ -68,12 +68,8 @@ func invoke(res http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	//testChannel()
-	//http.Handle("/", gorest.Handle9())
-	//term.Write(, term.Debug)
 	go webServer()
 	go runRestFul()
-	//term.Write(term.Read("What is your name"), term.Information)
 	term.Write("Admintration Console running on :9000", term.Information)
 	term.Write("https RestFul Service running on :3048", term.Information)
 	s := ""
