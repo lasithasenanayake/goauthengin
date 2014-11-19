@@ -3,7 +3,7 @@ package term
 import (
 	"duov6.com/updater"
 	"fmt"
-	"log"
+	//"log"
 	"os/exec"
 	"time"
 )

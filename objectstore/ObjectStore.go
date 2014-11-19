@@ -6,7 +6,6 @@ import (
 )
 
 func main() {
-
 	var isUnitTestMode bool = false
 
 	if isUnitTestMode {

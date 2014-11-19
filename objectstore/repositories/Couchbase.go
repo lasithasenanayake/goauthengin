@@ -24,7 +24,7 @@ func (repository CouchRepository) GetQuery(request *messaging.ObjectRequest) Rep
 func (repository CouchRepository) GetByKey(request *messaging.ObjectRequest) RepositoryResponse {
 
 	response := RepositoryResponse{}
-	bucket, errorMessage, isError := getCouchBucket(request)
+	bucket, errorMessage, isError := getCouchBucket()(request)
 
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
@@ -68,7 +68,7 @@ func (repository CouchRepository) DeleteMultiple(request *messaging.ObjectReques
 
 func (repository CouchRepository) DeleteSingle(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
-	bucket, errorMessage, isError := getCouchBucket(request)
+	bucket, errorMessage, isError := getCouchBucket()(request)
 
 	if isError == true {
 		response.GetErrorResponse(errorMessage)
@@ -80,7 +80,7 @@ func (repository CouchRepository) DeleteSingle(request *messaging.ObjectRequest)
 			response.GetErrorResponse("Error deleting one object in Couchbase" + err.Error())
 		} else {
 			response.IsSuccess = true
-			response.Message = "Successfully deleting one object in Coucahbase"
+			response.Message = "Successfully deleted one object in Coucahbase"
 		}
 
 	}
@@ -98,20 +98,20 @@ func (repository CouchRepository) Test(request *messaging.ObjectRequest) {
 
 func setOne(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
-	bucket, errorMessage, isError := getCouchBucket(request)
+	bucket, errorMessage, isError := getCouchBucket()(request)
 
 	if isError == true {
 		fmt.Println(errorMessage)
 		response.GetErrorResponse(errorMessage)
 	} else {
 		key := request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
-		err := bucket.Set(key, 0, request.Body.Body)
+		err := bucket.Set(key, 0, request.Body.Object)
 		if err != nil {
 			response.IsSuccess = false
 			response.GetErrorResponse("Error inserting/updating one object in Couchbase" + err.Error())
 		} else {
 			response.IsSuccess = true
-			response.Message = "Successfully inserting/updating one object in Coucahbase"
+			response.Message = "Successfully inserted/updated one object in Coucahbase"
 		}
 
 	}
@@ -121,14 +121,14 @@ func setOne(request *messaging.ObjectRequest) RepositoryResponse {
 
 func setMany(request *messaging.ObjectRequest) RepositoryResponse {
 	response := RepositoryResponse{}
-	bucket, errorMessage, isError := getCouchBucket(request)
+	bucket, errorMessage, isError := getCouchBucket()(request)
 
 	if isError == true {
 		fmt.Println(errorMessage)
 		response.GetErrorResponse(errorMessage)
 	} else {
 		key := request.Controls.Namespace + "." + request.Controls.Class + "." + request.Controls.Id
-		err := bucket.Set(key, 0, request.Body.Body)
+		err := bucket.Set(key, 0, request.Body.Object)
 		if err != nil {
 			response.IsSuccess = false
 			response.GetErrorResponse("Error inserting/updating one object in Couchbase" + err.Error())
@@ -142,33 +142,49 @@ func setMany(request *messaging.ObjectRequest) RepositoryResponse {
 	return response
 }
 
-func getCouchBucket(request *messaging.ObjectRequest) (bucket *couchbase.Bucket, errorMessage string, isError bool) {
+//func getCouchBucket(request *messaging.ObjectRequest) (bucket *couchbase.Bucket, errorMessage string, isError bool) {
 
-	isError = false
+//}
 
-	setting_host := request.Configuration.ServerConfiguration["COUCH"]["Url"]
-	setting_bucket := request.Configuration.ServerConfiguration["COUCH"]["Bucket"]
-	//setting_userName := request.StoreConfiguration.ServerConfiguration["COUCH"]["UserName"]
-	//setting_password := request.StoreConfiguration.ServerConfiguration["COUCH"]["Password"]
+func getCouchBucket() func(request *messaging.ObjectRequest) (bucket *couchbase.Bucket, errorMessage string, isError bool) {
 
-	c, err := couchbase.Connect(setting_host)
-	if err != nil {
-		isError = true
-		errorMessage = "Error connecting Couchbase to :  " + setting_host
+	var createdBucket *couchbase.Bucket
+
+	return func(request *messaging.ObjectRequest) (bucket *couchbase.Bucket, errorMessage string, isError bool) {
+		isError = false
+
+		if createdBucket == nil {
+			setting_host := request.Configuration.ServerConfiguration["COUCH"]["Url"]
+			setting_bucket := request.Configuration.ServerConfiguration["COUCH"]["Bucket"]
+			//setting_userName := request.StoreConfiguration.ServerConfiguration["COUCH"]["UserName"]
+			//setting_password := request.StoreConfiguration.ServerConfiguration["COUCH"]["Password"]
+
+			c, err := couchbase.Connect(setting_host)
+			if err != nil {
+				isError = true
+				errorMessage = "Error connecting Couchbase to :  " + setting_host
+			}
+
+			pool, err := c.GetPool("default")
+			if err != nil {
+				isError = true
+				errorMessage = "Error getting pool: "
+			}
+
+			returnBucket, err := pool.GetBucket(setting_bucket)
+
+			if err != nil {
+				isError = true
+				errorMessage = "Error getting Couchbase bucket: " + setting_bucket
+			} else {
+				createdBucket = returnBucket
+			}
+
+			return
+
+		} else {
+			bucket = createdBucket
+			return
+		}
 	}
-
-	pool, err := c.GetPool("default")
-	if err != nil {
-		isError = true
-		errorMessage = "Error getting pool: "
-	}
-
-	returnBucket, err := pool.GetBucket(setting_bucket)
-	if err != nil {
-		isError = true
-		errorMessage = "Error getting Couchbase bucket: " + setting_bucket
-	}
-
-	bucket = returnBucket
-	return
 }

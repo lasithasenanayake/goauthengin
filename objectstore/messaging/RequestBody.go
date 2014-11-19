@@ -3,5 +3,6 @@ package messaging
 type RequestBody struct {
 	Parameters ObjectParameters
 	Query      Query
-	Body       map[string]interface{}
+	Object     map[string]interface{}
+	Objects    []map[string]interface{}
 }

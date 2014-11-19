@@ -21,7 +21,7 @@ func (h *HTTPService) Start() {
 	//READ BY KEY
 	m.Get("/:namespace/:class/:id", handleRequest)
 	//READ BY KEYWORD
-	m.Get("/:namespace/:class?keyword=:keyword", handleRequest)
+	m.Get("/:namespace/:class", handleRequest)
 	//READ ADVANCED, INSERT
 	m.Post("/:namespace/:class", handleRequest)
 
@@ -112,7 +112,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 	headerClass := params["class"]
 
 	headerId := params["id"]
-	headerKeyword := params["keyword"]
+	headerKeyword := r.URL.Query().Get("keyword")
 
 	if len(headerToken) == 0 {
 		isSuccess = false
@@ -130,6 +130,7 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 				message = "Error converting request : " + rerr.Error()
 				isSuccess = false
 			} else {
+
 				err := json.Unmarshal(rb, &requestBody)
 
 				if err != nil {
@@ -149,31 +150,39 @@ func getObjectRequest(r *http.Request, objectRequest *messaging.ObjectRequest, p
 				if len(headerId) != 0 {
 					headerOperation = "read-key"
 				} else if len(headerKeyword) != 0 {
+					objectRequest.Body = messaging.RequestBody{}
+					objectRequest.Body.Query = messaging.Query{Parameters: headerKeyword}
 					headerOperation = "read-keyword"
 				} else if len(headerNamespace) != 0 && len(headerClass) != 0 {
 					headerOperation = "read-all"
 				}
 				canAddHeader = false
 			case "POST": //read query, read special, insert
-				if requestBody.Body != nil {
+				if len(requestBody.Object) != 0 || len(requestBody.Objects) != 0 {
 					fmt.Println("Inset by POST : " + objectRequest.Body.Parameters.KeyProperty)
 					headerOperation = "insert"
-					headerId = objectRequest.Body.Body[objectRequest.Body.Parameters.KeyProperty].(string)
+					if len(objectRequest.Body.Object) != 0 {
+						headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
+					}
 				} else if &requestBody.Query != nil {
 					headerOperation = "read-filter"
 					canAddHeader = false
 				}
 
 			case "PUT": //update
-				headerId = objectRequest.Body.Body[objectRequest.Body.Parameters.KeyProperty].(string)
+				headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
 				headerOperation = "update"
 
 			case "DELETE": //delete
-				headerId = objectRequest.Body.Body[objectRequest.Body.Parameters.KeyProperty].(string)
+				headerId = objectRequest.Body.Object[objectRequest.Body.Parameters.KeyProperty].(string)
 				headerOperation = "delete"
 			}
 
-			headerMultipliciry = "single"
+			if len(objectRequest.Body.Objects) != 0 {
+				headerMultipliciry = "multiple"
+			} else if len(objectRequest.Body.Object) != 0 {
+				headerMultipliciry = "single"
+			}
 
 			objectRequest.Controls = messaging.RequestControls{SecurityToken: headerToken, Namespace: headerNamespace, Class: headerClass, Multiplicity: headerMultipliciry, Id: headerId, Operation: headerOperation}
 

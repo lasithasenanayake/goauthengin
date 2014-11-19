@@ -23,6 +23,7 @@ func (r ReplicatedStorageEngine) Store(request *messaging.ObjectRequest) (respon
 		if request.Controls.Multiplicity == "single" {
 			engineMappings = request.Configuration.StoreConfiguration["INSERT-SINGLE"]
 		} else {
+			fmt.Println("Getting multi insert store config")
 			engineMappings = request.Configuration.StoreConfiguration["INSERT-MULTIPLE"]
 		}
 	case "read-all":
