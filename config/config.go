@@ -13,7 +13,8 @@ type File struct {
 	Filename string
 }
 
-//Config.txt file load for modifications
+//Config.txt file load for modificationsinter
+
 func (c *File) loadfile() {
 	configFile := c.Filename
 	if c.m == nil {

@@ -3,6 +3,7 @@ package main
 import (
 	"code.google.com/p/gorest"
 	//"crypto/tls"
+	"duov6.com/applib"
 	"duov6.com/authlib"
 	//"duov6.com/common"
 	"duov6.com/term"
@@ -98,6 +99,7 @@ func webServer() {
 
 func runRestFul() {
 	gorest.RegisterService(new(authlib.Auth))
+	gorest.RegisterService(new(applib.AppSvc))
 	err := http.ListenAndServeTLS(":3048", "apache.crt", "apache.key", gorest.Handle())
 	if err != nil {
 		term.Write(err.Error(), term.Error)

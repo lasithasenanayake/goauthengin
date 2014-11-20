@@ -1,6 +1,7 @@
 package authlib
 
 import (
+	"duov6.com/applib"
 	"duov6.com/common"
 	"duov6.com/config"
 	"duov6.com/objectstore/client"
@@ -24,7 +25,7 @@ func (h *AuthHandler) ChangePassword() {
 }
 
 func (h *AuthHandler) AppAutherize(ApplicationID, UserID string) bool {
-	bytes, err := client.Go("ignore", "com.duosoftware.auth", "Atherized").GetOne().BySearching(ApplicationID + "-" + UserID).Ok()
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "atherized").GetOne().BySearching(ApplicationID + "-" + UserID).Ok()
 	term.Write("AppAutherize For Application "+ApplicationID+" UserID "+UserID, term.Debug)
 	if err == "" {
 		if bytes != nil {
@@ -46,26 +47,50 @@ func (h *AuthHandler) GetAuthCode(ApplicationID, UserID, URI string) string {
 	a.UserID = UserID
 	a.URI = URI
 	a.Code = common.RandText(10)
-	client.Go("ignore", "com.duosoftware.auth", "AuthCode").StoreObject().WithKeyField("Code").AndStoreOne(a).Ok()
+	client.Go("ignore", "com.duosoftware.auth", "authcode").StoreObject().WithKeyField("Code").AndStoreOne(a).Ok()
 	term.Write("GetAuthCode for "+ApplicationID+" with SecurityToken :"+UserID, term.Debug)
 	return a.Code
 }
 
-func AutherizeApp(Code, ApplicationID, AppSecret, UserID string) bool {
-	bytes, _ := client.Go("ignore", "com.duosoftware.auth", "AuthCode").GetOne().BySearching(Code).Ok()
-	term.Write("AutherizeApp For SecurityToken "+ApplicationID, term.Debug)
+func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID string) (bool, string) {
+	bytes, err := client.Go("ignore", "com.duosoftware.auth", "authcode").GetOne().BySearching(Code).Ok()
+	term.Write("AutherizeApp For ApplicationID "+ApplicationID+" Code "+Code+" Secret "+AppSecret+" Err "+err, term.Debug)
 	var uList []AuthCode
 	json.Unmarshal(bytes, &uList)
+	term.Write(string(bytes[:]), term.Debug)
 	if len(uList) != 0 {
+		var appH applib.Apphanler
+		application, err := appH.Get(ApplicationID)
+		if err == "" {
+			if application.SecretKey == AppSecret && uList[0].UserID == UserID && Code == uList[0].Code {
+				var appAth AppAutherize
+				appAth.AppliccatioID = ApplicationID
+				appAth.AutherizeKey = ApplicationID + "-" + UserID
+				appAth.Name = application.Name
 
-		return true
+				client.Go("ignore", "com.duosoftware.auth", "atherized").StoreObject().WithKeyField("AutherizeKey").AndStoreOne(appAth).Ok()
+
+				return true, ""
+			}
+		} else {
+			return false, err
+		}
+	} else {
+		return false, "Code invalid"
 	}
-	return false
+	return false, "process error"
+
 }
 
 func (h *AuthHandler) AddSession(a AuthCertificate) {
 	client.Go("ignore", "com.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
 	term.Write("AddSession for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
+}
+
+func (h *AuthHandler) LogOut(a AuthCertificate) {
+	client.Go("ignore", "com.duosoftware.auth", "sessions").StoreObject().WithKeyField("SecurityToken").AndStoreOne(a).Ok()
+	term.Write("LogOut for "+a.Name+" with SecurityToken :"+a.SecurityToken, term.Debug)
+	//return true
 }
 
 func (h *AuthHandler) GetSession(key string) (AuthCertificate, string) {
@@ -96,7 +121,7 @@ func (h *AuthHandler) SaveUser(u User) User {
 	if err == "" {
 		var uList []User
 		err := json.Unmarshal(bytes, &uList)
-		if err == nil {
+		if err == nil || bytes == nil {
 			if len(uList) == 0 {
 
 				u.UserID = common.GetGUID()
@@ -105,6 +130,8 @@ func (h *AuthHandler) SaveUser(u User) User {
 				client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
 			} else {
 				u.UserID = uList[0].UserID
+				u.Password = uList[0].Password
+				u.ConfirmPassword = uList[0].Password
 				term.Write("SaveUser saving user  "+u.Name+" Update User "+u.UserID, term.Debug)
 				client.Go("ignore", "com.duosoftware.auth", "users").StoreObject().WithKeyField("EmailAddress").AndStoreOne(u).Ok()
 			}
@@ -114,6 +141,8 @@ func (h *AuthHandler) SaveUser(u User) User {
 	} else {
 		term.Write("SaveUser saving user fetech Error #"+err, term.Error)
 	}
+	u.Password = "*****"
+	u.ConfirmPassword = "*****"
 	return u
 }
 

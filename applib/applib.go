@@ -1,9 +1,10 @@
 package applib
 
 import (
-	"duov6.com/common"
-	"duov6.com/objectstore/client"
-	"duov6.com/term"
+	"code.google.com/p/gorest"
+	//"duov6.com/common"
+	//"duov6.com/objectstore/client"
+	//"duov6.com/term"
 	"encoding/json"
 )
 
@@ -23,57 +24,31 @@ type Application struct {
 }
 
 type AppSvc struct {
+	gorest.RestService
+	get gorest.EndPoint `method:"GET" path:"/Application/Get/{ApplicationID:string}" output:"Application"`
+	add gorest.EndPoint `method:"POST" path:"/Application/Add/" postdata:"Application"`
 }
 
-func (app AppSvc) Get(ApplicationID string) Application {
-	term.Write("Get  App  by ID"+ApplicationID, term.Debug)
-	bytes, err := client.Go("ignore", "com.duosoftware.application", "apps").GetOne().BySearching(ApplicationID).Ok()
-	var a Application
-	if err == "" {
-		if bytes != nil {
-			var uList []Application
-			err := json.Unmarshal(bytes, &uList)
-
-			if err == nil && len(uList) != 0 {
-				return uList[0]
-			} else {
-				if err != nil {
-					term.Write("Login  user Error "+err.Error(), term.Error)
-				}
-			}
-		}
-	} else {
-		term.Write("Login  user  Error "+err, term.Error)
+func (app AppSvc) Get(ApplicationID string) (a Application) {
+	var h Apphanler
+	a, err := h.Get(ApplicationID)
+	if err != "" {
+		app.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
+		return
 	}
-
-	return a
+	return
+	//return a
 }
 
-func (app AppSvc) Add(a Application) Application {
-	term.Write("Add saving Application  "+a.Name, term.Debug)
-
-	bytes, err := client.Go("ignore", "com.duosoftware.application", "apps").GetOne().BySearching(a.ApplicationID).Ok()
-	if err == "" {
-		var uList []Application
-		err := json.Unmarshal(bytes, &uList)
-		if err == nil {
-			if len(uList) == 0 {
-
-				a.ApplicationID = common.GetGUID()
-				a.SecretKey = common.RandText(10)
-				term.Write("Add saving Addaplication  "+a.Name+" New App "+a.ApplicationID, term.Debug)
-
-				client.Go("ignore", "com.duosoftware.Application", "apps").StoreObject().WithKeyField("ApplicationID").AndStoreOne(a).Ok()
-			} else {
-				a.ApplicationID = uList[0].ApplicationID
-				term.Write("SaveUser saving user  "+a.Name+" Update User "+a.ApplicationID, term.Debug)
-				client.Go("ignore", "com.duosoftware.Application", "apps").StoreObject().WithKeyField("ApplicationID").AndStoreOne(a).Ok()
-			}
-		} else {
-			term.Write("SaveUser saving user store Error #"+err.Error(), term.Error)
-		}
-	} else {
-		term.Write("SaveUser saving user fetech Error #"+err, term.Error)
+func (app AppSvc) Add(a Application) {
+	var h Apphanler
+	a, err := h.Add(a)
+	if err != "" {
+		app.ResponseBuilder().SetResponseCode(401).WriteAndOveride([]byte(err))
+		return
 	}
-	return a
+	b, _ := json.Marshal(a)
+	app.ResponseBuilder().SetResponseCode(200).WriteAndOveride(b)
+	return
+	//return a
 }

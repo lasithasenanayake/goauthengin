@@ -93,9 +93,11 @@ func setOneElastic(request *messaging.ObjectRequest) RepositoryResponse {
 
 	conn := getConnection()(request)
 
-	_, err := conn.Index(request.Controls.Class, request.Controls.Class, getNoSqlKey(request), nil, request.Body.Object)
+	nosqlkey := getNoSqlKey(request)
+	_, err := conn.Index(request.Controls.Class, request.Controls.Class, nosqlkey, nil, request.Body.Object)
 
 	if err != nil {
+		fmt.Println(err.Error())
 		response.GetErrorResponse("Elastic Search Single Insert Error : " + err.Error())
 	} else {
 		response.IsSuccess = true
