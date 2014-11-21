@@ -4,8 +4,11 @@ import (
 	"duov6.com/updater"
 	"fmt"
 	//"log"
+	"bufio"
 	"os/exec"
 	"time"
+
+	"os"
 )
 
 const (
@@ -38,6 +41,7 @@ const (
 	Error       = 1
 	Information = 0
 	Debug       = 2
+	Splash      = 3
 )
 
 func Read(Lable string) string {
@@ -54,14 +58,29 @@ func Write(Lable string, mType int) {
 	switch mType {
 	case 1:
 		//log.Printf(format, ...)
-		fmt.Println(FgRed + time.Now().String() + "Error! " + Lable + Reset)
+		fmt.Println(time.Now().String() + FgRed + BgWhite + " Error! " + Reset + Lable + Reset)
 	case 0:
-		fmt.Println(FgGreen + time.Now().String() + "Information! " + Lable + Reset)
+		fmt.Println(FgGreen + time.Now().String() + " Information! " + Lable + Reset)
 	case 2:
-		fmt.Println(FgBlue + time.Now().String() + "Debug! " + Lable + Reset)
+		fmt.Println(FgBlue + time.Now().String() + " Debug! " + Lable + Reset)
+	case 3:
+		fmt.Println(FgBlack + BgWhite + Lable + Reset)
 	default:
 		fmt.Println(FgMagenta + time.Now().String() + Lable + Reset)
 	}
+}
+
+func SplashScreen(fileName string) {
+
+	file, _ := os.Open(fileName)
+	if file != nil {
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			//split key and value
+			fmt.Println(FgBlack + BgWhite + scanner.Text() + Reset)
+		}
+	}
+
 }
 
 func StartCommandLine() {

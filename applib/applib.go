@@ -2,9 +2,6 @@ package applib
 
 import (
 	"code.google.com/p/gorest"
-	//"duov6.com/common"
-	//"duov6.com/objectstore/client"
-	//"duov6.com/term"
 	"encoding/json"
 )
 
@@ -37,7 +34,6 @@ func (app AppSvc) Get(ApplicationID string) (a Application) {
 		return
 	}
 	return
-	//return a
 }
 
 func (app AppSvc) Add(a Application) {

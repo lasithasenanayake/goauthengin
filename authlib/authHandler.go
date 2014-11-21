@@ -3,7 +3,7 @@ package authlib
 import (
 	"duov6.com/applib"
 	"duov6.com/common"
-	"duov6.com/config"
+	//"duov6.com/config"
 	"duov6.com/objectstore/client"
 	"duov6.com/term"
 	"encoding/json"
@@ -11,12 +11,12 @@ import (
 )
 
 type AuthHandler struct {
-	Config config.File
+	Config AuthConfig
 }
 
 func newAuthHandler() *AuthHandler {
 	authhld := new(AuthHandler)
-	authhld.Config = config.File{Filename: "auth.cofig"}
+	authhld.Config = GetConfig()
 	return authhld
 }
 

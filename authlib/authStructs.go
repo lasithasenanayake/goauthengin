@@ -1,19 +1,54 @@
 package authlib
 
 import (
-//"duov6.com/config"
+	"duov6.com/config"
+	"duov6.com/term"
+	"encoding/json"
 )
+
+var Config AuthConfig
+
+//var configRead
 
 func NewUser(userID, EmailAddress, Name, Password string) User {
 	return User{userID, EmailAddress, Name, Password, Password, false}
 }
 
 func GetConfig() AuthConfig {
-	return AuthConfig{Cirtifcate: "", PrivateKey: ""}
+	b, err := config.Get("Auth")
+	if err == nil {
+		json.Unmarshal(b, &Config)
+	} else {
+		Config = AuthConfig{}
+		config.Add(Config, "Auth")
+	}
+	return Config
 }
 
 func SetConfig(c AuthConfig) {
-	//c.PrivateKey
+	config.Add(c, "Auth")
+}
+
+func SetupConfig() {
+
+	Config = GetConfig()
+	if Config.UserName != "" {
+		return
+	}
+	term.SplashScreen("setup.art")
+	if term.Read("Https Enabled (y/n)") == "y" {
+		Config.Https_Enabled = true
+		Config.Cirtifcate = term.Read("Cirtifcate filename")
+		Config.PrivateKey = term.Read("PrivateKey filename")
+	} else {
+		Config.Https_Enabled = false
+	}
+
+	Config.UserName = term.Read("Username")
+	Config.Password = term.Read("Password")
+	//Config.
+	SetConfig(Config)
+
 }
 
 type AppAutherize struct {
@@ -48,6 +83,8 @@ type AuthConfig struct {
 	Smtpserver    string
 	Smtpusername  string
 	Smtppassword  string
+	UserName      string
+	Password      string
 }
 
 type AuthCode struct {
