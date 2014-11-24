@@ -41,16 +41,12 @@ func Get(name string) (out []byte, err error) {
 	name = name + ".config"
 	file, e := ioutil.ReadFile(name)
 	if e != nil {
-		if _, err := os.Stat(name); os.IsNotExist(err) {
-			_, err := os.Create(name)
-			if err == nil {
-				fmt.Printf("%s file created ... \n", name)
-			} else {
-				fmt.Printf("file cannot create please check file location ")
-			}
-		}
-	}
 
+		err = e
+		out = nil
+		return
+	}
+	err = nil
 	out = file
 	return
 }

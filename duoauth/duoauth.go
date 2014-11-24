@@ -9,7 +9,10 @@ import (
 )
 
 func main() {
+
 	authlib.SetupConfig()
+	term.GetConfig()
+	//term.
 	//authlib.GetConfig()
 	//term.Write(authlib.Config.Cirtifcate, term.Splash)
 	go webServer()
@@ -21,6 +24,7 @@ func main() {
 	term.Write("|     Duo v6 Auth Service 6.0                                  |", term.Splash)
 	term.Write("================================================================", term.Splash)
 	term.StartCommandLine()
+	//authlib.
 
 }
 
@@ -42,10 +46,19 @@ func webServer() {
 func runRestFul() {
 	gorest.RegisterService(new(authlib.Auth))
 	gorest.RegisterService(new(applib.AppSvc))
-	err := http.ListenAndServeTLS(":3048", "apache.crt", "apache.key", gorest.Handle())
-	if err != nil {
-		term.Write(err.Error(), term.Error)
-		return
+	c := authlib.GetConfig()
+	if c.Https_Enabled {
+		err := http.ListenAndServeTLS(":3048", c.Cirtifcate, c.PrivateKey, gorest.Handle())
+		if err != nil {
+			term.Write(err.Error(), term.Error)
+			return
+		}
+	} else {
+		err := http.ListenAndServe(":3048", gorest.Handle())
+		if err != nil {
+			term.Write(err.Error(), term.Error)
+			return
+		}
 	}
 }
 

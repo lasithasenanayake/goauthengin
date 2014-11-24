@@ -59,6 +59,7 @@ func (h *AuthHandler) AutherizeApp(Code, ApplicationID, AppSecret, UserID string
 	json.Unmarshal(bytes, &uList)
 	term.Write(string(bytes[:]), term.Debug)
 	if len(uList) != 0 {
+
 		var appH applib.Apphanler
 		application, err := appH.Get(ApplicationID)
 		if err == "" {
@@ -148,6 +149,8 @@ func (h *AuthHandler) SaveUser(u User) User {
 
 func (h *AuthHandler) Login(email, password string) (User, string) {
 	term.Write("Login  user  email"+email, term.Debug)
+	term.Write(Config.UserName, term.Debug)
+
 	bytes, err := client.Go("ignore", "com.duosoftware.auth", "users").GetOne().BySearching(email).Ok()
 	var user User
 	if err == "" {
