@@ -1,8 +1,8 @@
 package authlib
 
 import (
-	"code.google.com/p/gorest"
 	"duov6.com/common"
+	"duov6.com/gorest"
 	"encoding/json"
 )
 
